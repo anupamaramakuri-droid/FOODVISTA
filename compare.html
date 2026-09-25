@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FoodVista - Compare</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        /* HEADER */
+
+        header {
+            background: linear-gradient(
+                90deg,
+                #ff6b35,
+                #ff3d00
+            );
+
+            color: white;
+            text-align: center;
+            padding: 35px 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 42px;
+        }
+
+        header p {
+            margin: 8px 0 20px;
+            font-size: 20px;
+        }
+
+        .home-btn {
+            display: inline-block;
+            background: white;
+            color: #ff4b1f;
+            text-decoration: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .home-btn:hover {
+            background: #ffe8df;
+        }
+
+        /* MAIN */
+
+        .container {
+            width: 92%;
+            max-width: 1450px;
+            margin: 32px auto;
+        }
+
+        .search-box {
+            background: white;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+        }
+
+        .search-box h2 {
+            margin-top: 0;
+        }
+
+        input {
+            width: 100%;
+            padding: 17px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        .compare-btn {
+            margin-top: 16px;
+            padding: 13px 28px;
+            border: none;
+            border-radius: 8px;
+            background: #ff6b35;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .compare-btn:hover {
+            background: #ff3d00;
+        }
+
+        .result-count {
+            text-align: center;
+            margin: 22px 0;
+            font-size: 18px;
+            color: #555;
+        }
+
+        /* TABLE CARD */
+
+        .table-card {
+            background: white;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .table-card h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        th {
+            background: #222;
+            color: white;
+            padding: 16px 12px;
+            text-align: left;
+            font-size: 15px;
+        }
+
+        th.swiggy {
+            color: #ff6b35;
+        }
+
+        th.zomato {
+            color: #ff4b5c;
+        }
+
+        td {
+            padding: 17px 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background: #fff8f5;
+        }
+
+        .food-name {
+            font-weight: bold;
+        }
+
+        .not-available {
+            color: #777;
+            font-style: italic;
+        }
+
+        /* LINKS */
+
+        .link-btn {
+            display: block;
+            text-decoration: none;
+            color: white;
+            padding: 8px 13px;
+            margin: 4px 0;
+            border-radius: 7px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .swiggy-btn {
+            background: #ff6b35;
+        }
+
+        .zomato-btn {
+            background: #e23744;
+        }
+
+        .link-btn:hover {
+            opacity: 0.85;
+        }
+
+        /* EMPTY */
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        /* FOOTER */
+
+        footer {
+            margin-top: 40px;
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+    <!-- HEADER -->
+
+    <header>
+
+        <h1>🍴 FoodVista</h1>
+
+        <p>
+            Swiggy vs Zomato Food Comparison
+        </p>
+
+        <a href="/" class="home-btn">
+            🏠 Back to Home
+        </a>
+
+    </header>
+
+
+    <!-- MAIN -->
+
+    <div class="container">
+
+        <div class="search-box">
+
+            <h2>🔍 Compare Food</h2>
+
+            <input
+                type="text"
+                id="foodInput"
+                placeholder="Enter food name..."
+                value=""
+            >
+
+            <button
+                class="compare-btn"
+                onclick="compareFood()"
+            >
+                Compare
+            </button>
+
+        </div>
+
+
+        <div
+            class="result-count"
+            id="resultCount"
+        >
+            Search for a food item to compare.
+        </div>
+
+
+        <div class="table-card">
+
+            <h2>
+                📊 Food Comparison
+            </h2>
+
+            <div id="tableContainer">
+
+                <div class="empty">
+                    Enter a food name and click Compare.
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- FOOTER -->
+
+    <footer>
+
+        FoodVista © 2026 |
+        Vizag Food Comparison Platform
+
+    </footer>
+
+
+    <script>
+
+        function displayValue(value) {
+
+            if (
+                value === null ||
+                value === undefined ||
+                String(value).trim() === ""
+            ) {
+
+                return '<span class="not-available">Not Available</span>';
+
+            }
+
+            return value;
+
+        }
+
+
+        async function compareFood() {
+
+            const input =
+                document.getElementById("foodInput");
+
+            const query =
+                input.value.trim();
+
+
+            if (query === "") {
+
+                document.getElementById(
+                    "resultCount"
+                ).innerText =
+                    "Please enter a food name.";
+
+                document.getElementById(
+                    "tableContainer"
+                ).innerHTML =
+                    '<div class="empty">Please enter a food name.</div>';
+
+                return;
+            }
+
+
+            document.getElementById(
+                "resultCount"
+            ).innerText =
+                "Searching...";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/compare?q=" +
+                        encodeURIComponent(query)
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                const results =
+                    data.comparison || [];
+
+
+                document.getElementById(
+                    "resultCount"
+                ).innerText =
+                    "Found " +
+                    results.length +
+                    " common food items.";
+
+
+                if (results.length === 0) {
+
+                    document.getElementById(
+                        "tableContainer"
+                    ).innerHTML =
+                        '<div class="empty">' +
+                        'No common food items found.' +
+                        '</div>';
+
+                    return;
+                }
+
+
+                let html = `
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Food Item
+                                </th>
+
+                                <th class="swiggy">
+                                    🟠 Swiggy Restaurant
+                                </th>
+
+                                <th class="swiggy">
+                                    Swiggy Price
+                                </th>
+
+                                <th class="swiggy">
+                                    ⭐ Swiggy Rating
+                                </th>
+
+                                <th class="zomato">
+                                    🔵 Zomato Restaurant
+                                </th>
+
+                                <th class="zomato">
+                                    Zomato Price
+                                </th>
+
+                                <th class="zomato">
+                                    Zomato Rating
+                                </th>
+
+                                <th>
+                                    Links
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+                `;
+
+
+                results.forEach(item => {
+
+                    const swiggy =
+                        item.swiggy || {};
+
+                    const zomato =
+                        item.zomato || {};
+
+
+                    html += `
+
+                        <tr>
+
+                            <td class="food-name">
+                                ${displayValue(
+                                    item.food_item
+                                )}
+                            </td>
+
+
+                            <td>
+                                ${displayValue(
+                                    swiggy.restaurant
+                                )}
+                            </td>
+
+
+                            <td>
+                                ${displayValue(
+                                    swiggy.price
+                                )}
+                            </td>
+
+
+                            <td>
+                                ${displayValue(
+                                    swiggy.rating
+                                )}
+                            </td>
+
+
+                            <td>
+                                ${displayValue(
+                                    zomato.restaurant
+                                )}
+                            </td>
+
+
+                            <td>
+                                ${displayValue(
+                                    zomato.price
+                                )}
+                            </td>
+
+
+                            <td>
+                                ${displayValue(
+                                    zomato.rating
+                                )}
+                            </td>
+
+
+                            <td>
+
+                                ${
+                                    swiggy.url
+                                    ?
+                                    `
+                                    <a
+                                        class="link-btn swiggy-btn"
+                                        href="${swiggy.url}"
+                                        target="_blank"
+                                    >
+                                        Swiggy
+                                    </a>
+                                    `
+                                    :
+                                    ""
+                                }
+
+
+                                ${
+                                    zomato.url
+                                    ?
+                                    `
+                                    <a
+                                        class="link-btn zomato-btn"
+                                        href="${zomato.url}"
+                                        target="_blank"
+                                    >
+                                        Zomato
+                                    </a>
+                                    `
+                                    :
+                                    ""
+                                }
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                });
+
+
+                html += `
+
+                        </tbody>
+
+                    </table>
+
+                `;
+
+
+                document.getElementById(
+                    "tableContainer"
+                ).innerHTML = html;
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                document.getElementById(
+                    "resultCount"
+                ).innerText =
+                    "Something went wrong.";
+
+
+                document.getElementById(
+                    "tableContainer"
+                ).innerHTML =
+                    '<div class="empty">' +
+                    'Unable to load comparison data.' +
+                    '</div>';
+
+            }
+
+        }
+
+
+        document
+            .getElementById("foodInput")
+            .addEventListener(
+                "keydown",
+                function(event) {
+
+                    if (event.key === "Enter") {
+
+                        compareFood();
+
+                    }
+
+                }
+            );
+
+    </script>
+
+</body>
+</html>

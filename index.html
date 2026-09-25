@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodVista - Vizag Food Comparison</title>
+    <style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff8f1;
+    color: #2b211b;
+}
+
+header {
+    background: linear-gradient(135deg, #ff5a1f, #f97316);
+    color: white;
+    padding: 34px 22px 70px;
+    text-align: center;
+}
+
+.hero-inner {
+    max-width: 1100px;
+    margin: auto;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.brand-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: white;
+    color: #ff5a1f;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+}
+
+header p {
+    margin: 6px 0 0;
+    font-size: 16px;
+    opacity: .92;
+}
+
+.hero-label {
+    margin-top: 38px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.hero-title {
+    margin: 12px 0 10px;
+    font-size: 48px;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+}
+
+.hero-title span {
+    color: #ffe0b2;
+}
+
+.hero-subtitle {
+    max-width: 650px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-size: 16px;
+    opacity: .94;
+}
+
+.top-actions {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.top-actions a {
+    display: inline-block;
+    padding: 11px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.action-light {
+    background: white;
+    color: #e94d18;
+}
+
+.action-dark {
+    background: #2b211b;
+    color: white;
+}
+
+.container {
+    width: 92%;
+    max-width: 1180px;
+    margin: -38px auto 50px;
+    position: relative;
+}
+
+.search-panel {
+    background: white;
+    padding: 18px;
+    border-radius: 20px;
+    box-shadow: 0 16px 45px rgba(80, 40, 10, .12);
+}
+
+.search-box {
+    width: 100%;
+    padding: 18px 20px;
+    font-size: 17px;
+    border: 1.5px solid #eadfd5;
+    border-radius: 14px;
+    outline: none;
+    background: #fffdfb;
+}
+
+.search-box:focus {
+    border-color: #ff5a1f;
+    box-shadow: 0 0 0 4px rgba(255, 90, 31, .10);
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 18px 0;
+}
+
+.buttons button {
+    padding: 11px 18px;
+    border: 1px solid #eee1d7;
+    border-radius: 11px;
+    cursor: pointer;
+    font-size: 15px;
+    background: white;
+    color: #2b211b;
+    box-shadow: 0 3px 10px rgba(0,0,0,.05);
+}
+
+.buttons button:hover {
+    background: #fff0e7;
+    border-color: #ffb08c;
+}
+
+#status {
+    text-align: center;
+    color: #746a63;
+    margin: 18px 0 25px;
+    font-size: 15px;
+}
+
+#recommendation {
+    display: none;
+    background: white;
+    padding: 24px;
+    margin-bottom: 25px;
+    border-radius: 18px;
+    border-left: 5px solid #ff5a1f;
+    box-shadow: 0 8px 25px rgba(80, 40, 10, .09);
+}
+
+#recommendation h2 {
+    margin-top: 0;
+    color: #2b211b;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(80, 40, 10, .09);
+    overflow-x: auto;
+}
+
+.card h2 {
+    margin-top: 0;
+}
+
+.count {
+    color: #746a63;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+th {
+    background: #2b211b;
+    color: white;
+    padding: 13px;
+    text-align: left;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #eee5df;
+}
+
+tr:hover {
+    background: #fff8f1;
+}
+
+.view-link {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #ff5a1f;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.view-link:hover {
+    background: #e94d18;
+}
+
+footer {
+    background: #2b211b;
+    color: white;
+    text-align: center;
+    padding: 28px 20px;
+    margin-top: 40px;
+}
+
+footer p {
+    margin: 6px;
+}
+
+@media (max-width: 700px) {
+    header {
+        padding: 30px 18px 65px;
+    }
+
+    .brand {
+        font-size: 29px;
+    }
+
+    .brand-icon {
+        width: 46px;
+        height: 46px;
+        font-size: 23px;
+    }
+
+    .hero-title {
+        font-size: 38px;
+    }
+
+    .hero-subtitle {
+        font-size: 14px;
+    }
+
+    .container {
+        width: 94%;
+        margin-top: -32px;
+    }
+
+    .search-panel {
+        padding: 14px;
+        border-radius: 17px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+}
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="hero-inner">
+
+        <div class="brand">
+            <span class="brand-icon">🍴</span>
+            <span>FoodVista</span>
+        </div>
+
+        <p>Vizag Food Comparison Platform</p>
+
+        <div class="hero-label">
+            SMART FOOD SEARCH
+        </div>
+
+        <h1 class="hero-title">
+            Compare food.<br>
+            <span>Eat smarter.</span>
+        </h1>
+
+        <p class="hero-subtitle">
+            Search real food data from Swiggy and Zomato and compare
+            available restaurant, price and rating information in one place.
+        </p>
+
+        <div class="top-actions">
+            {% if logged_in %}
+                <span style="padding:11px 15px;font-weight:700;">
+                    Welcome, {{ user_name }}
+                </span>
+                <a class="action-light" href="/logout">Logout</a>
+            {% else %}
+                <a class="action-light" href="/login">Login</a>
+                <a class="action-light" href="/register">Register</a>
+            {% endif %}
+
+            <a class="action-dark" href="/compare">
+                ⚖️ Compare Swiggy vs Zomato
+            </a>
+        </div>
+
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="search-panel">
+
+        <input
+            type="text"
+            id="searchBox"
+            class="search-box"
+            placeholder="🔍 Search restaurant or food item..."
+            oninput="searchFood()"
+        >
+
+        <div class="buttons">
+            <button onclick="filterPlatform('all')">
+                🏠 All
+            </button>
+
+            <button onclick="filterPlatform('swiggy')">
+                🟠 Swiggy
+            </button>
+
+            <button onclick="filterPlatform('zomato')">
+                🔵 Zomato
+            </button>
+        </div>
+
+        <div class="buttons">
+            <button onclick="sortByPrice()">
+                💰 Price: Low → High
+            </button>
+
+            <button onclick="sortByRating()">
+                ⭐ Rating: High → Low
+            </button>
+        </div>
+
+    </div>
+
+    <div id="status">
+        Search for a restaurant or food item.
+    </div>
+
+    <div id="recommendation">
+        <h2>⭐ Recommendation</h2>
+        <div id="recommendationContent"></div>
+    </div>
+
+    <div
+        class="card"
+        id="swiggySection"
+        style="display:none;"
+    >
+        <h2>🟠 Swiggy Food Items</h2>
+
+        <p class="count">
+            Matching Swiggy Records:
+            <strong id="swiggyCount">0</strong>
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Restaurant</th>
+                    <th>Food Item</th>
+                    <th>Cuisine</th>
+                    <th>Price</th>
+                    <th>Rating</th>
+                    <th>Rating Count</th>
+                    <th>View</th>
+                </tr>
+            </thead>
+
+            <tbody id="swiggyBody"></tbody>
+        </table>
+    </div>
+
+    <div
+        class="card"
+        id="zomatoSection"
+        style="display:none;"
+    >
+        <h2>🔵 Zomato Food Items</h2>
+
+        <p class="count">
+            Matching Zomato Records:
+            <strong id="zomatoCount">0</strong>
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Restaurant</th>
+                    <th>Food Item</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Rating</th>
+                    <th>Rating Count</th>
+                    <th>View</th>
+                </tr>
+            </thead>
+
+            <tbody id="zomatoBody"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<footer>
+    <p>🍴 FoodVista</p>
+    <p>Vizag Food Comparison Platform</p>
+</footer>
+
+
+<script>
+
+
+/* ==================================================
+   GLOBAL DATA
+   ================================================== */
+
+let currentSwiggy = [];
+
+let currentZomato = [];
+
+let currentPlatform = "all";
+
+
+/* ==================================================
+   SEARCH
+   ================================================== */
+
+let searchTimer;
+
+
+function searchFood() {
+
+    clearTimeout(searchTimer);
+
+    searchTimer = setTimeout(function() {
+
+        performSearch();
+
+    }, 300);
+
+}
+
+
+
+/* ==================================================
+   API SEARCH
+   ================================================== */
+
+function performSearch() {
+
+    let query =
+        document
+        .getElementById("searchBox")
+        .value
+        .trim();
+
+
+    if (query === "") {
+
+        currentSwiggy = [];
+
+        currentZomato = [];
+
+        hideResults();
+
+        document.getElementById("status").innerText =
+            "Search for a restaurant or food item.";
+
+        return;
+    }
+
+
+    document.getElementById("status").innerText =
+        "Searching...";
+
+
+    fetch(
+        "/api/search?q=" +
+        encodeURIComponent(query)
+    )
+
+    .then(function(response) {
+
+        return response.json();
+
+    })
+
+    .then(function(data) {
+
+        currentSwiggy = data.swiggy || [];
+
+        currentZomato = data.zomato || [];
+
+
+        renderResults();
+
+        showRecommendation(
+            data.recommendation
+        );
+
+    })
+
+    .catch(function(error) {
+
+        console.error(error);
+
+        document.getElementById("status").innerText =
+            "Something went wrong while searching.";
+
+    });
+
+}
+
+
+
+/* ==================================================
+   RENDER RESULTS
+   ================================================== */
+
+function renderResults() {
+
+    let swiggyBody =
+        document.getElementById("swiggyBody");
+
+    let zomatoBody =
+        document.getElementById("zomatoBody");
+
+
+    swiggyBody.innerHTML = "";
+
+    zomatoBody.innerHTML = "";
+
+
+    /* ==============================================
+       SWIGGY
+       ============================================== */
+
+    let swiggyData = currentSwiggy;
+
+    let zomatoData = currentZomato;
+
+
+    if (currentPlatform === "swiggy") {
+
+        zomatoData = [];
+
+    }
+
+
+    if (currentPlatform === "zomato") {
+
+        swiggyData = [];
+
+    }
+
+
+    /* SWIGGY ROWS */
+
+    swiggyData.forEach(function(row) {
+
+        let tr =
+            document.createElement("tr");
+
+
+        let link = row["View on Swiggy"];
+
+
+        let viewButton = "";
+
+
+        if (link && link.trim() !== "") {
+
+            viewButton =
+                '<a class="view-link" href="' +
+                escapeHtml(link) +
+                '" target="_blank">' +
+                'View on Swiggy' +
+                '</a>';
+
+        }
+        else {
+
+            viewButton = "-";
+
+        }
+
+
+        tr.innerHTML =
+
+            "<td>" +
+            escapeHtml(row["Restaurant"]) +
+            "</td>" +
+
+            "<td>" +
+            escapeHtml(row["Food Item"]) +
+            "</td>" +
+
+            "<td>" +
+            escapeHtml(row["Cuisine"]) +
+            "</td>" +
+
+            "<td><strong>₹" +
+            escapeHtml(row["Price"]) +
+            "</strong></td>" +
+
+            "<td>⭐ " +
+            escapeHtml(row["Rating"]) +
+            "</td>" +
+
+            "<td>" +
+            escapeHtml(row["Rating Count"]) +
+            "</td>" +
+
+            "<td>" +
+            viewButton +
+            "</td>";
+
+
+        swiggyBody.appendChild(tr);
+
+    });
+
+
+    /* ZOMATO ROWS */
+
+    zomatoData.forEach(function(row) {
+
+        let tr =
+            document.createElement("tr");
+
+
+        let link = row["View on Zomato"];
+
+
+        let viewButton = "";
+
+
+        if (link && link.trim() !== "") {
+
+            viewButton =
+                '<a class="view-link" href="' +
+                escapeHtml(link) +
+                '" target="_blank">' +
+                'View on Zomato' +
+                '</a>';
+
+        }
+        else {
+
+            viewButton = "-";
+
+        }
+
+
+        tr.innerHTML =
+
+            "<td>" +
+            escapeHtml(row["Restaurant"]) +
+            "</td>" +
+
+            "<td>" +
+            escapeHtml(row["Cuisine"]) +
+            "</td>" +
+
+            "<td><strong>₹" +
+            escapeHtml(row["Price"]) +
+            "</strong></td>" +
+
+            "<td>⭐ " +
+            escapeHtml(row["Rating"]) +
+            "</td>" +
+
+            "<td>" +
+            escapeHtml(row["Rating Count"]) +
+            "</td>" +
+
+            "<td>" +
+            viewButton +
+            "</td>";
+
+
+        zomatoBody.appendChild(tr);
+
+    });
+
+
+    /* ==============================================
+       COUNTS
+       ============================================== */
+
+    document.getElementById("swiggyCount").innerText =
+        swiggyData.length;
+
+
+    document.getElementById("zomatoCount").innerText =
+        zomatoData.length;
+
+
+    /* ==============================================
+       SHOW / HIDE
+       ============================================== */
+
+    document.getElementById("swiggySection").style.display =
+        swiggyData.length > 0
+        ? "block"
+        : "none";
+
+
+    document.getElementById("zomatoSection").style.display =
+        zomatoData.length > 0
+        ? "block"
+        : "none";
+
+
+    let total =
+        swiggyData.length +
+        zomatoData.length;
+
+
+    if (total === 0) {
+
+        document.getElementById("status").innerText =
+            "No matching results found.";
+
+    }
+    else {
+
+        document.getElementById("status").innerText =
+            "Found " + total + " matching records.";
+
+    }
+
+}
+
+
+
+/* ==================================================
+   PLATFORM FILTER
+   ================================================== */
+
+function filterPlatform(platform) {
+
+    currentPlatform = platform;
+
+    renderResults();
+
+}
+
+
+
+/* ==================================================
+   SORT BY PRICE
+   ================================================== */
+
+function sortByPrice() {
+
+    currentSwiggy.sort(function(a, b) {
+
+        return extractPrice(a["Price"])
+             - extractPrice(b["Price"]);
+
+    });
+
+
+    currentZomato.sort(function(a, b) {
+
+        return extractPrice(a["Price"])
+             - extractPrice(b["Price"]);
+
+    });
+
+
+    renderResults();
+
+}
+
+
+
+/* ==================================================
+   SORT BY RATING
+   ================================================== */
+
+function sortByRating() {
+
+    currentSwiggy.sort(function(a, b) {
+
+        return extractRating(b["Rating"])
+             - extractRating(a["Rating"]);
+
+    });
+
+
+    currentZomato.sort(function(a, b) {
+
+        return extractRating(b["Rating"])
+             - extractRating(a["Rating"]);
+
+    });
+
+
+    renderResults();
+
+}
+
+
+
+/* ==================================================
+   PRICE EXTRACTION
+   ================================================== */
+
+function extractPrice(value) {
+
+    if (!value) {
+
+        return 999999;
+
+    }
+
+
+    let match =
+        value
+        .toString()
+        .replace(/,/g, "")
+        .match(/\d+(\.\d+)?/);
+
+
+    if (!match) {
+
+        return 999999;
+
+    }
+
+
+    return parseFloat(match[0]);
+
+}
+
+
+
+/* ==================================================
+   RATING EXTRACTION
+   ================================================== */
+
+function extractRating(value) {
+
+    if (!value) {
+
+        return 0;
+
+    }
+
+
+    let number =
+        parseFloat(value);
+
+
+    if (isNaN(number)) {
+
+        return 0;
+
+    }
+
+
+    return number;
+
+}
+
+
+
+/* ==================================================
+   RECOMMENDATION
+   ================================================== */
+
+function showRecommendation(item) {
+
+    let box =
+        document.getElementById(
+            "recommendation"
+        );
+
+    let content =
+        document.getElementById(
+            "recommendationContent"
+        );
+
+
+    if (!item) {
+
+        box.style.display = "none";
+
+        content.innerHTML = "";
+
+        return;
+
+    }
+
+
+    box.style.display = "block";
+
+
+    let url = item.url || "";
+
+
+    let viewButton = "";
+
+
+    if (url !== "") {
+
+        viewButton =
+            '<br><br><a class="view-link" href="' +
+            escapeHtml(url) +
+            '" target="_blank">' +
+            'View on ' +
+            escapeHtml(item.platform) +
+            '</a>';
+
+    }
+
+
+    content.innerHTML =
+
+        "<strong>Platform:</strong> " +
+        escapeHtml(item.platform) +
+
+        "<br>" +
+
+        "<strong>Restaurant:</strong> " +
+        escapeHtml(item.restaurant) +
+
+        "<br>" +
+
+        "<strong>Food Item:</strong> " +
+        escapeHtml(item.food || "Restaurant level") +
+
+        "<br>" +
+
+        "<strong>Rating:</strong> ⭐ " +
+        escapeHtml(item.rating) +
+
+        "<br>" +
+
+        "<strong>Price:</strong> ₹" +
+        escapeHtml(item.price) +
+
+        viewButton;
+
+}
+
+
+
+/* ==================================================
+   HIDE RESULTS
+   ================================================== */
+
+function hideResults() {
+
+    document.getElementById("swiggySection").style.display =
+        "none";
+
+    document.getElementById("zomatoSection").style.display =
+        "none";
+
+    document.getElementById("recommendation").style.display =
+        "none";
+
+}
+
+
+
+/* ==================================================
+   HTML ESCAPE
+   ================================================== */
+
+function escapeHtml(value) {
+
+    if (value === null || value === undefined) {
+
+        return "";
+
+    }
+
+
+    return String(value)
+
+        .replace(/&/g, "&amp;")
+
+        .replace(/</g, "&lt;")
+
+        .replace(/>/g, "&gt;")
+
+        .replace(/"/g, "&quot;")
+
+        .replace(/'/g, "&#039;");
+
+}
+
+
+</script>
+</body>
+</html>

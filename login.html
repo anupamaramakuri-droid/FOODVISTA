@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FoodVista - Login</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #fff7ed;
+            color: #2b211b;
+        }
+
+        .hero {
+            background: #ff5a1f;
+            color: white;
+            padding: 45px 25px 85px;
+        }
+
+        .hero-inner {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .brand {
+            font-size: 34px;
+            font-weight: bold;
+            margin-bottom: 45px;
+        }
+
+        .tagline {
+            font-size: 15px;
+            margin-top: 6px;
+            opacity: 0.9;
+        }
+
+        .small-title {
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            line-height: 1.05;
+            margin: 0;
+        }
+
+        .hero h1 span {
+            color: #ffe0b2;
+        }
+
+        .login-area {
+            padding: 0 20px 50px;
+        }
+
+        .card {
+            max-width: 560px;
+            margin: -45px auto 0;
+            background: white;
+            border-radius: 26px;
+            padding: 40px;
+            box-shadow: 0 15px 45px rgba(80, 40, 10, 0.15);
+        }
+
+        .welcome {
+            color: #ff5a1f;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            font-size: 32px;
+        }
+
+        .description {
+            color: #777;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            height: 56px;
+            padding: 0 16px;
+            border: 1px solid #ddd;
+            border-radius: 13px;
+            font-size: 16px;
+            margin-bottom: 22px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #ff5a1f;
+        }
+
+        button {
+            width: 100%;
+            height: 58px;
+            border: 0;
+            border-radius: 13px;
+            background: #ff5a1f;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 22px rgba(255, 90, 31, 0.25);
+        }
+
+        button:hover {
+            background: #e94d18;
+        }
+
+        .register {
+            text-align: center;
+            margin-top: 28px;
+            color: #777;
+        }
+
+        .register a {
+            color: #ff5a1f;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .note {
+            text-align: center;
+            margin-top: 20px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            .hero {
+                padding: 32px 22px 75px;
+            }
+
+            .brand {
+                font-size: 28px;
+                margin-bottom: 40px;
+            }
+
+            .hero h1 {
+                font-size: 38px;
+            }
+
+            .card {
+                padding: 28px 22px;
+            }
+
+            .card h2 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hero">
+        <div class="hero-inner">
+
+            <div class="brand">
+                🍴 FoodVista
+                <div class="tagline">
+                    Vizag Food Comparison Platform
+                </div>
+            </div>
+
+            <div class="small-title">
+                SMART FOOD SEARCH
+            </div>
+
+            <h1>
+                Compare food.<br>
+                <span>Eat smarter.</span>
+            </h1>
+
+        </div>
+    </div>
+
+
+    <div class="login-area">
+
+        <div class="card">
+
+            <div class="welcome">
+                WELCOME BACK
+            </div>
+
+            <h2>
+                Sign in to FoodVista
+            </h2>
+
+            <p class="description">
+                Continue your smart food comparison journey.
+            </p>
+
+
+            <form method="POST" action="/login">
+
+                <label for="email">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
+                >
+
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
+                >
+
+
+                <button type="submit">
+                    Sign In &nbsp; →
+                </button>
+
+            </form>
+
+
+            <div class="register">
+                New to FoodVista?
+                <a href="/register">
+                    Create Account
+                </a>
+            </div>
+
+            <div class="note">
+                🔒 Your account information is securely stored.
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
