@@ -70,7 +70,8 @@ swiggy_data = read_csv_file(
 )
 
 zomato_data = read_csv_file(
-    "zomato_menu_foodvista_clean.csv"
+    "zomato_menu_foodvista_updated.csv"
+)
 )
 
 
