@@ -1,750 +1,402 @@
-from flask import Flask, render_template, request, redirect, session
+
+from flask import Flask, render_template, request, redirect, session, jsonify
 import sqlite3
 import csv
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+app.secret_key = os.environ.get(
+    "FOODVISTA_SECRET_KEY",
+    "change-this-foodvista-secret-key"
+)
 
-app.secret_key = "foodvista_secret_key"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "database.db")
+DATA_DIR = os.path.join(BASE_DIR, "multicity_data")
 
+ALLOWED_CITIES = [
+    "Visakhapatnam", "Hyderabad", "Chennai", "Delhi", "Mumbai"
+]
 
-# ==================================================
-# DATABASE
-# ==================================================
 
 def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            )
+        """)
 
-    conn = sqlite3.connect("database.db")
 
-    cursor = conn.cursor()
+def read_csv_file(path):
+    if not os.path.exists(path):
+        return []
+    with open(path, "r", encoding="utf-8-sig",
+              errors="replace", newline="") as file:
+        return [
+            {
+                (key or "").strip(): (value or "").strip()
+                for key, value in row.items()
+            }
+            for row in csv.DictReader(file)
+        ]
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+
+def first_value(row, *keys):
+    for key in keys:
+        value = row.get(key, "")
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def normalise_city(value):
+    aliases = {
+        "vizag": "Visakhapatnam",
+        "visakhapatnam": "Visakhapatnam",
+        "hyderabad": "Hyderabad",
+        "chennai": "Chennai",
+        "delhi": "Delhi",
+        "new delhi": "Delhi",
+        "mumbai": "Mumbai"
+    }
+    return aliases.get((value or "").strip().lower(), "")
+
+
+def normalise_record(row, platform):
+    city = normalise_city(first_value(row, "city", "City"))
+    restaurant = first_value(
+        row, "restaurant_name", "Restaurant", "restaurant", "rest_names"
+    )
+
+    if not city or not restaurant:
+        return None
+
+    price = first_value(
+        row, "price_inr", "Price", "average_price_raw",
+        "price for two", "price for one"
+    )
+
+    return {
+        "restaurant": restaurant,
+        "city": city,
+        "cuisine": first_value(
+            row, "cuisines", "Cuisine", "Category", "rest_crusine"
+        ) or "Not Available",
+        "rating": first_value(
+            row, "rating", "Rating", "rest_ratings"
+        ) or "Not Available",
+        "rating_count": first_value(row, "rating_count", "Rating Count")
+            or "Not Available",
+        "price": price or "Not Available",
+        "area": first_value(row, "area", "Area", "address", "Address")
+            or "Not Available",
+        "platform": platform,
+        "url": first_value(
+            row, "url", "URL", "View on Swiggy",
+            "View on Zomato", "rest_urls", "restaurant_link"
+        ),
+        "pure_veg": first_value(row, "pure_veg") or "Not Available",
+        "delivery_time": first_value(row, "average_delivery_time")
+            or "Not Available",
+        "offers_count": first_value(row, "offers_count")
+            or "Not Available",
+        "offer_name": first_value(row, "offer_name")
+            or "Not Available",
+        "safety_measure": first_value(row, "safety_measure")
+            or "Not Available",
+        "restaurant_key": (
+            first_value(row, "restaurant_key") or restaurant.lower()
         )
-    """)
+    }
 
-    conn.commit()
-    conn.close()
+
+def load_platform_data(platform):
+    filename = (
+        "swiggy_multicity_cleaned.csv"
+        if platform == "Swiggy"
+        else "zomato_multicity_cleaned.csv"
+    )
+    path = os.path.join(DATA_DIR, filename)
+    rows = read_csv_file(path)
+
+    records = [
+        normalise_record(row, platform) for row in rows
+    ]
+    records = [row for row in records if row]
+
+    # Fall back to the original Vizag datasets only if the new file
+    # contains no usable records.
+    if records:
+        return records
+
+    old_filename = (
+        "swiggy_foodvista_merged.csv"
+        if platform == "Swiggy"
+        else "zomato_menu_foodvista_clean.csv"
+    )
+
+    old_rows = read_csv_file(os.path.join(BASE_DIR, old_filename))
+    fallback = []
+
+    for row in old_rows:
+        restaurant = first_value(row, "Restaurant")
+        if not restaurant:
+            continue
+
+        fallback.append({
+            "restaurant": restaurant,
+            "city": "Visakhapatnam",
+            "cuisine": first_value(row, "Cuisine", "Category")
+                or "Not Available",
+            "rating": first_value(row, "Rating") or "Not Available",
+            "rating_count": first_value(row, "Rating Count")
+                or "Not Available",
+            "price": first_value(row, "Price") or "Not Available",
+            "area": "Not Available",
+            "platform": platform,
+            "url": first_value(
+                row, "View on Swiggy", "View on Zomato"
+            ),
+            "pure_veg": "Not Available",
+            "delivery_time": "Not Available",
+            "offers_count": "Not Available",
+            "offer_name": "Not Available",
+            "safety_measure": "Not Available",
+            "restaurant_key": restaurant.lower()
+        })
+
+    return fallback
 
 
 init_db()
+swiggy_data = load_platform_data("Swiggy")
+zomato_data = load_platform_data("Zomato")
 
 
-# ==================================================
-# READ CSV
-# ==================================================
-
-def read_csv_file(filename):
-
-    records = []
-
-    if not os.path.exists(filename):
-        return records
-
-    with open(
-        filename,
-        "r",
-        encoding="utf-8-sig",
-        errors="ignore"
-    ) as file:
-
-        reader = csv.DictReader(file)
-
-        for row in reader:
-            records.append(row)
-
-    return records
+def current_city():
+    city = request.args.get("city", "Visakhapatnam").strip()
+    if city.lower() == "all":
+        return "All"
+    return normalise_city(city) or "Visakhapatnam"
 
 
-# ==================================================
-# LOAD DATASETS
-# ==================================================
-
-swiggy_data = read_csv_file(
-    "swiggy_foodvista_merged.csv"
-)
-
-zomato_data = read_csv_file(
-    "zomato_menu_foodvista_updated.csv"
-)
-)
+def rating_number(value):
+    try:
+        return float(str(value or "").strip().replace(",", ""))
+    except (ValueError, TypeError):
+        return 0.0
 
 
-# ==================================================
-# HOME
-# ==================================================
+def filter_records(records, query="", city="All"):
+    query = (query or "").strip().lower()
+    results = []
+
+    for row in records:
+        if city != "All" and row["city"] != city:
+            continue
+
+        searchable = " ".join([
+            row.get("restaurant", ""),
+            row.get("cuisine", ""),
+            row.get("area", ""),
+            row.get("city", "")
+        ]).lower()
+
+        if query and query not in searchable:
+            continue
+
+        results.append(row)
+
+    return results
+
 
 @app.route("/")
 def home():
-
     if "user_id" not in session:
         return redirect("/login")
 
     return render_template(
         "index.html",
         logged_in=True,
-        user_name=session.get("user_name", "")
-    
+        user_name=session.get("user_name", ""),
+        cities=ALLOWED_CITIES
     )
 
 
-# ==================================================
-# COMPARE PAGE
-# ==================================================
-
 @app.route("/compare")
 def compare_page():
+    if "user_id" not in session:
+        return redirect("/login")
+    return render_template("compare.html", cities=ALLOWED_CITIES)
 
-    return render_template("compare.html")
-
-
-# ==================================================
-# LOGIN
-# ==================================================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-
     if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
-        email = request.form["email"].strip()
+        with sqlite3.connect(DB_PATH) as conn:
+            user = conn.execute(
+                """SELECT id, name, email, password
+                   FROM users WHERE lower(email) = ?""",
+                (email,)
+            ).fetchone()
 
-        password = request.form["password"]
+            valid = False
+            if user:
+                try:
+                    valid = check_password_hash(user[3], password)
+                except (ValueError, TypeError):
+                    valid = False
 
-        conn = sqlite3.connect("database.db")
-
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            SELECT *
-            FROM users
-            WHERE email = ?
-            """,
-            (email,)
-        )
-
-        user = cursor.fetchone()
-
-        if user:
-
-            stored_password = user[3]
-
-            password_valid = False
-
-            # ------------------------------------------
-            # CHECK HASHED PASSWORD
-            # ------------------------------------------
-
-            try:
-
-                password_valid = check_password_hash(
-                    stored_password,
-                    password
-                )
-
-            except ValueError:
-
-                password_valid = False
-
-
-            # ------------------------------------------
-            # OLD PASSWORD SUPPORT
-            # ------------------------------------------
-
-            if not password_valid and stored_password == password:
-
-                password_valid = True
-
-                new_password = generate_password_hash(
-                    password
-                )
-
-                cursor.execute(
-                    """
-                    UPDATE users
-                    SET password = ?
-                    WHERE id = ?
-                    """,
-                    (
-                        new_password,
-                        user[0]
+                # Upgrade legacy plain-text passwords.
+                if not valid and user[3] == password:
+                    valid = True
+                    conn.execute(
+                        "UPDATE users SET password = ? WHERE id = ?",
+                        (generate_password_hash(password), user[0])
                     )
-                )
 
-                conn.commit()
+        if valid and user:
+            session["user_id"] = user[0]
+            session["user_name"] = user[1]
+            session["user_email"] = user[2]
+            return redirect("/")
 
-
-            if password_valid:
-
-                session["user_id"] = user[0]
-
-                session["user_name"] = user[1]
-
-                session["user_email"] = user[2]
-
-                conn.close()
-
-                return redirect("/")
-
-
-        conn.close()
-
-        return "Invalid email or password."
+        return "Invalid email or password.", 401
 
     return render_template("login.html")
 
 
-# ==================================================
-# REGISTER
-# ==================================================
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
-
     if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
-        name = request.form["name"].strip()
-
-        email = request.form["email"].strip()
-
-        password = request.form["password"]
-
-
-        hashed_password = generate_password_hash(
-            password
-        )
-
-
-        conn = sqlite3.connect("database.db")
-
-        cursor = conn.cursor()
+        if not name or not email or not password:
+            return "Please fill in all fields.", 400
 
         try:
-
-            cursor.execute(
-                """
-                INSERT INTO users
-                (name, email, password)
-                VALUES (?, ?, ?)
-                """,
-                (
-                    name,
-                    email,
-                    hashed_password
+            with sqlite3.connect(DB_PATH) as conn:
+                conn.execute(
+                    """INSERT INTO users (name, email, password)
+                       VALUES (?, ?, ?)""",
+                    (name, email, generate_password_hash(password))
                 )
-            )
-
-            conn.commit()
-
         except sqlite3.IntegrityError:
-
-            conn.close()
-
-            return "Email already registered."
-
-        conn.close()
+            return "Email already registered.", 409
 
         return redirect("/login")
 
     return render_template("register.html")
 
 
-# ==================================================
-# LOGOUT
-# ==================================================
-
 @app.route("/logout")
 def logout():
-
     session.clear()
-
     return redirect("/login")
 
 
-# ==================================================
-# SWIGGY RECOMMENDATION
-# ==================================================
+@app.route("/api/cities")
+def api_cities():
+    coverage = {
+        city: {
+            "swiggy": sum(r["city"] == city for r in swiggy_data),
+            "zomato": sum(r["city"] == city for r in zomato_data)
+        }
+        for city in ALLOWED_CITIES
+    }
+    return jsonify({"cities": ALLOWED_CITIES, "coverage": coverage})
 
-def choose_swiggy_recommendation(records):
-
-    if not records:
-
-        return {}
-
-
-    def rating_value(row):
-
-        value = str(
-            row.get("Rating", "")
-        ).strip()
-
-        try:
-
-            return float(value)
-
-        except:
-
-            return 0
-
-
-    def rating_count_value(row):
-
-        value = str(
-            row.get("Rating Count", "")
-        ).strip()
-
-        value = value.replace(",", "")
-
-        try:
-
-            return int(float(value))
-
-        except:
-
-            return 0
-
-
-    records = sorted(
-        records,
-        key=lambda row: (
-            rating_value(row),
-            rating_count_value(row)
-        ),
-        reverse=True
-    )
-
-    return records[0]
-
-
-# ==================================================
-# SEARCH API
-# ==================================================
 
 @app.route("/api/search")
 def search():
+    query = request.args.get("q", "").strip()
+    city = current_city()
 
-    query = request.args.get(
-        "q",
-        ""
-    ).strip().lower()
+    swiggy = filter_records(swiggy_data, query, city)
+    zomato = filter_records(zomato_data, query, city)
 
+    swiggy.sort(key=lambda r: rating_number(r["rating"]), reverse=True)
+    zomato.sort(key=lambda r: rating_number(r["rating"]), reverse=True)
 
-    if query == "":
-
-        return {
-            "swiggy": [],
-            "zomato": [],
-            "total_swiggy": 0,
-            "total_zomato": 0,
-            "recommendation": None
-        }
-
-
-    swiggy_food_matches = []
-    swiggy_restaurant_matches = []
-    swiggy_cuisine_matches = []
-
-    zomato_food_matches = []
-    zomato_restaurant_matches = []
-    zomato_category_matches = []
-
-
-    # ==================================================
-    # SWIGGY
-    # ==================================================
-
-    for row in swiggy_data:
-
-        restaurant = str(
-            row.get("Restaurant", "")
-        ).strip()
-
-        food_item = str(
-            row.get("Food Item", "")
-        ).strip()
-
-        cuisine = str(
-            row.get("Cuisine", "")
-        ).strip()
-
-
-        if query in food_item.lower():
-
-            swiggy_food_matches.append(row)
-
-        elif query in restaurant.lower():
-
-            swiggy_restaurant_matches.append(row)
-
-        elif query in cuisine.lower():
-
-            swiggy_cuisine_matches.append(row)
-
-
-    # ==================================================
-    # ZOMATO
-    # ==================================================
-
-    for row in zomato_data:
-
-        restaurant = str(
-            row.get("Restaurant", "")
-        ).strip()
-
-        food_item = str(
-            row.get("Food Item", "")
-        ).strip()
-
-        category = str(
-            row.get("Category", "")
-        ).strip()
-
-
-        if query in food_item.lower():
-
-            zomato_food_matches.append(row)
-
-        elif query in restaurant.lower():
-
-            zomato_restaurant_matches.append(row)
-
-        elif query in category.lower():
-
-            zomato_category_matches.append(row)
-
-
-    # ==================================================
-    # COMBINE RESULTS
-    # ==================================================
-
-    swiggy_results = (
-        swiggy_food_matches
-        + swiggy_restaurant_matches
-        + swiggy_cuisine_matches
+    # Recommend actual records with a valid rating.
+    # Search terms and city filters are applied before ranking.
+    candidates = [
+        row for row in swiggy + zomato
+        if rating_number(row.get("rating")) > 0
+    ]
+    candidates.sort(
+        key=lambda r: rating_number(r["rating"]),
+        reverse=True
     )
 
-    zomato_results = (
-        zomato_food_matches
-        + zomato_restaurant_matches
-        + zomato_category_matches
-    )
+    recommendations = []
+    seen = set()
 
-
-    swiggy_results = swiggy_results[:100]
-
-    zomato_results = zomato_results[:100]
-
-
-    # ==================================================
-    # RECOMMENDATION
-    # ==================================================
-
-    recommendation = None
-
-
-    if swiggy_food_matches:
-
-        best = choose_swiggy_recommendation(
-            swiggy_food_matches
+    for row in candidates:
+        key = (
+            row["restaurant"].strip().lower(),
+            row["city"].strip().lower(),
+            row["platform"].strip().lower()
         )
+        if key not in seen:
+            seen.add(key)
+            recommendations.append(row)
+        if len(recommendations) == 6:
+            break
 
-        recommendation = {
+    return jsonify({
+        "city": city,
+        "swiggy": swiggy[:100],
+        "zomato": zomato[:100],
+        "total_swiggy": len(swiggy),
+        "total_zomato": len(zomato),
+        "recommendations": recommendations[:1],
+        "data_type": "restaurant-level"
+    })
 
-            "platform": "Swiggy",
-
-            "restaurant": best.get(
-                "Restaurant",
-                ""
-            ),
-
-            "food": best.get(
-                "Food Item",
-                ""
-            ),
-
-            "cuisine": best.get(
-                "Cuisine",
-                ""
-            ),
-
-            "price": best.get(
-                "Price",
-                ""
-            ),
-
-            "rating": best.get(
-                "Rating",
-                ""
-            ),
-
-            "rating_count": best.get(
-                "Rating Count",
-                ""
-            ),
-
-            "url": best.get(
-                "View on Swiggy",
-                ""
-            )
-        }
-
-
-    elif zomato_food_matches:
-
-        best = zomato_food_matches[0]
-
-        recommendation = {
-
-            "platform": "Zomato",
-
-            "restaurant": best.get(
-                "Restaurant",
-                ""
-            ),
-
-            "food": best.get(
-                "Food Item",
-                ""
-            ),
-
-            "cuisine": best.get(
-                "Category",
-                ""
-            ),
-
-            "price": best.get(
-                "Price",
-                ""
-            ),
-
-            "rating": "",
-
-            "rating_count": "",
-
-            "url": best.get(
-                "View on Zomato",
-                ""
-            )
-        }
-
-
-    return {
-
-        "swiggy": swiggy_results,
-
-        "zomato": zomato_results,
-
-        "total_swiggy": len(
-            swiggy_results
-        ),
-
-        "total_zomato": len(
-            zomato_results
-        ),
-
-        "recommendation": recommendation
-    }
-
-
-# ==================================================
-# COMPARISON API
-# ==================================================
 
 @app.route("/api/compare")
 def compare():
-
-    query = request.args.get(
-        "q",
-        ""
-    ).strip().lower()
-
-
-    if query == "":
-
-        return {
-            "comparison": []
-        }
-
-
-    swiggy_matches = []
-
-    zomato_matches = []
-
-
-    # ==================================================
-    # FIND SWIGGY FOOD ITEMS
-    # ==================================================
-
-    for row in swiggy_data:
-
-        food = str(
-            row.get("Food Item", "")
-        ).strip()
-
-
-        if query in food.lower():
-
-            swiggy_matches.append(row)
-
-
-    # ==================================================
-    # FIND ZOMATO FOOD ITEMS
-    # ==================================================
-
-    for row in zomato_data:
-
-        food = str(
-            row.get("Food Item", "")
-        ).strip()
-
-
-        if query in food.lower():
-
-            zomato_matches.append(row)
-
-
-    # ==================================================
-    # CREATE FOOD MAPS
-    # ==================================================
-
-    swiggy_map = {}
-
-    zomato_map = {}
-
-
-    for row in swiggy_matches:
-
-        food = str(
-            row.get("Food Item", "")
-        ).strip()
-
-        key = food.lower()
-
-
-        if key not in swiggy_map:
-
-            swiggy_map[key] = row
-
-
-    for row in zomato_matches:
-
-        food = str(
-            row.get("Food Item", "")
-        ).strip()
-
-        key = food.lower()
-
-
-        if key not in zomato_map:
-
-            zomato_map[key] = row
-
-
-    # ==================================================
-    # COMMON FOOD ITEMS
-    # ==================================================
-
-    common_foods = (
-        set(swiggy_map.keys())
-        &
-        set(zomato_map.keys())
-    )
-
-
-    comparison = []
-
-
-    for key in sorted(common_foods):
-
-        swiggy_row = swiggy_map[key]
-
-        zomato_row = zomato_map[key]
-
-
-        comparison.append({
-
-            "food_item": swiggy_row.get(
-                "Food Item",
-                ""
-            ),
-
-            "swiggy": {
-
-                "restaurant":
-                    swiggy_row.get(
-                        "Restaurant",
-                        ""
-                    ),
-
-                "price":
-                    swiggy_row.get(
-                        "Price",
-                        ""
-                    ),
-
-                "rating":
-                    swiggy_row.get(
-                        "Rating",
-                        ""
-                    ),
-
-                "rating_count":
-                    swiggy_row.get(
-                        "Rating Count",
-                        ""
-                    ),
-
-                "url":
-                    swiggy_row.get(
-                        "View on Swiggy",
-                        ""
-                    )
-            },
-
-            "zomato": {
-
-                "restaurant":
-                    zomato_row.get(
-                        "Restaurant",
-                        ""
-                    ),
-
-                "price":
-                    zomato_row.get(
-                        "Price",
-                        ""
-                    ),
-
-                "rating": "",
-
-                "rating_count": "",
-
-                "url":
-                    zomato_row.get(
-                        "View on Zomato",
-                        ""
-                    )
-            }
-        })
-
-
-    return {
-
-        "comparison": comparison[:50]
-
+    query = request.args.get("q", "").strip()
+    city = current_city()
+
+    swiggy = filter_records(swiggy_data, query, city)
+    zomato = filter_records(zomato_data, query, city)
+
+    swiggy_map = {
+        r["restaurant_key"].lower(): r for r in swiggy
+    }
+    zomato_map = {
+        r["restaurant_key"].lower(): r for r in zomato
     }
 
+    common = sorted(set(swiggy_map) & set(zomato_map))
+    comparisons = [
+        {
+            "restaurant": swiggy_map[key]["restaurant"],
+            "city": city,
+            "swiggy": swiggy_map[key],
+            "zomato": zomato_map[key]
+        }
+        for key in common
+    ]
 
-# ==================================================
-# START SERVER
-# ==================================================
+    return jsonify({
+        "city": city,
+        "comparison": comparisons[:100],
+        "data_type": "restaurant-level"
+    })
+
 
 if __name__ == "__main__":
-
     app.run(debug=True)
